@@ -1,0 +1,2 @@
+[functions.ai-gateway]
+verify_jwt = false
