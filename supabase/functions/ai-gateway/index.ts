@@ -21,6 +21,7 @@ interface Provider {
 interface BrowserSession {
   id: string;
   provider: string;
+  account_name: string | null;
   token: string;
   status: "active" | "expired" | "rotating" | "quarantined" | "failed";
   health_score: number;
@@ -31,6 +32,8 @@ interface BrowserSession {
   user_agent: string | null;
   ip_address: string | null;
   metadata: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
 }
 
 interface RiskScore {
@@ -773,37 +776,160 @@ async function handleRotate(req: Request): Promise<Response> {
     const sessionId = body.session_id;
 
     if (sessionId) {
-      // Rotate specific session
+      // Real rotation: expire this session, activate the next available one for the same provider
+      const { data: currentSession } = await supabase
+        .from("browser_sessions")
+        .select("provider")
+        .eq("id", sessionId)
+        .maybeSingle();
+
+      if (!currentSession) {
+        return new Response(JSON.stringify({ error: "Session not found" }), {
+          status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Mark current session as expired
       await supabase.from("browser_sessions").update({
-        status: "rotating",
+        status: "expired",
         updated_at: new Date().toISOString(),
       }).eq("id", sessionId);
 
-      setTimeout(async () => {
+      // Find and activate the next available session for the same provider
+      const { data: nextSession } = await supabase
+        .from("browser_sessions")
+        .select("*")
+        .eq("provider", currentSession.provider)
+        .eq("status", "active")
+        .neq("id", sessionId)
+        .order("last_used", { ascending: true, nullsFirst: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (nextSession) {
+        // Reset the next session's request count so it starts fresh
         await supabase.from("browser_sessions").update({
-          status: "active",
           requests_count: 0,
           updated_at: new Date().toISOString(),
-        }).eq("id", sessionId);
-      }, 1000);
+        }).eq("id", nextSession.id);
+      }
 
-      return new Response(JSON.stringify({ message: "Session rotation initiated", session_id: sessionId }), {
+      await fireAlert("session_expiry", `Session ${sessionId} rotated (expired) for ${currentSession.provider}${nextSession ? `, next session ${nextSession.id} activated` : ", no replacement available"}`);
+
+      return new Response(JSON.stringify({
+        message: "Session rotated successfully",
+        expired_session: sessionId,
+        next_session: nextSession?.id ?? null,
+      }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Rotate all active sessions
-    await supabase.from("browser_sessions")
-      .update({ status: "rotating", updated_at: new Date().toISOString() })
+    // Rotate all active sessions: expire all, then re-activate the least-used one per provider
+    const { data: allActive } = await supabase
+      .from("browser_sessions")
+      .select("id, provider")
       .eq("status", "active");
 
-    setTimeout(async () => {
-      await supabase.from("browser_sessions")
-        .update({ status: "active", requests_count: 0, updated_at: new Date().toISOString() })
-        .eq("status", "rotating");
-    }, 1000);
+    if (allActive && allActive.length > 0) {
+      // Group by provider
+      const byProvider = new Map<string, typeof allActive>();
+      for (const s of allActive) {
+        const arr = byProvider.get(s.provider) ?? [];
+        arr.push(s);
+        byProvider.set(s.provider, arr);
+      }
 
-    return new Response(JSON.stringify({ message: "All sessions rotation initiated" }), {
+      // Expire all
+      await supabase.from("browser_sessions")
+        .update({ status: "expired", updated_at: new Date().toISOString() })
+        .eq("status", "active");
+
+      // For each provider, activate the last session (least recently used)
+      for (const [, sessions] of byProvider) {
+        const last = sessions[sessions.length - 1];
+        await supabase.from("browser_sessions").update({
+          status: "active",
+          requests_count: 0,
+          updated_at: new Date().toISOString(),
+        }).eq("id", last.id);
+      }
+    }
+
+    return new Response(JSON.stringify({ message: "All sessions rotated" }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  return new Response(JSON.stringify({ error: "Method not allowed" }), {
+    status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+async function handleSessionCrud(req: Request, id: string | null): Promise<Response> {
+  // POST /api/sessions — create
+  if (req.method === "POST" && !id) {
+    const body = await req.json().catch(() => ({}));
+    if (!body.token || !body.provider) {
+      return new Response(JSON.stringify({ error: "token and provider are required" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const { data, error } = await supabase.from("browser_sessions").insert({
+      provider: body.provider,
+      account_name: body.account_name ?? null,
+      token: body.token,
+      user_agent: body.user_agent ?? null,
+      ip_address: body.ip_address ?? null,
+      expires_at: body.expires_at ? new Date(body.expires_at).toISOString() : null,
+      status: "active",
+      health_score: 100,
+      requests_count: 0,
+      metadata: {},
+    }).select().single();
+
+    if (error) {
+      return new Response(JSON.stringify({ error: error.message }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    return new Response(JSON.stringify({ session: data }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  // PUT /api/sessions/:id — update
+  if (req.method === "PUT" && id) {
+    const body = await req.json().catch(() => ({}));
+    const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    if (body.provider) updates.provider = body.provider;
+    if (body.account_name !== undefined) updates.account_name = body.account_name;
+    if (body.token) updates.token = body.token;
+    if (body.user_agent !== undefined) updates.user_agent = body.user_agent ?? null;
+    if (body.ip_address !== undefined) updates.ip_address = body.ip_address ?? null;
+    if (body.expires_at !== undefined) updates.expires_at = body.expires_at ? new Date(body.expires_at).toISOString() : null;
+    if (body.status) updates.status = body.status;
+
+    const { data, error } = await supabase.from("browser_sessions").update(updates).eq("id", id).select().single();
+    if (error) {
+      return new Response(JSON.stringify({ error: error.message }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    return new Response(JSON.stringify({ session: data }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  // DELETE /api/sessions/:id — delete
+  if (req.method === "DELETE" && id) {
+    const { error } = await supabase.from("browser_sessions").delete().eq("id", id);
+    if (error) {
+      return new Response(JSON.stringify({ error: error.message }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    return new Response(JSON.stringify({ message: "Session deleted" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
@@ -850,6 +976,16 @@ Deno.serve(async (req: Request) => {
 
     if (path === "/api/sessions" && req.method === "GET") {
       return await handleSessions();
+    }
+
+    if (path === "/api/sessions" && (req.method === "POST")) {
+      return await handleSessionCrud(req, null);
+    }
+
+    // /api/sessions/:id — PUT or DELETE
+    const sessionMatch = path.match(/^\/api\/sessions\/([^/]+)$/);
+    if (sessionMatch && (req.method === "PUT" || req.method === "DELETE")) {
+      return await handleSessionCrud(req, sessionMatch[1]);
     }
 
     if (path === "/api/health" && req.method === "GET") {

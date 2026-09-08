@@ -76,6 +76,7 @@ export interface Notification {
 export interface BrowserSession {
   id: string;
   provider: string;
+  account_name: string | null;
   token: string;
   status: "active" | "expired" | "rotating" | "quarantined" | "failed";
   health_score: number;
