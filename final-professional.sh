@@ -185,7 +185,7 @@ Getting Help
     Read documentation
     Search GitHub Issues
     Create new issue
-    EOF
+EOF
 
 echo "=== Updating logo ==="
 cat > assets/logo.svg << 'EOF'
