@@ -1,63 +1,66 @@
-# AI Gateway - Unified AI Model Access
+<div align="center">
 
-A smart gateway for unified access to AI models with multi-provider support, intelligent routing, and real-time streaming.
+<img src="assets/logo.svg" width="120" alt="AI Gateway"/>
 
-## Features
+AI Gateway
+Unified, Intelligent Access to Every AI Model
+One API. Every Model. Zero Complexity.
 
-- Multi-provider: ArvanCloud, OpenRouter, Anthropic, OpenAI, Gemini, Groq
-- Real-time streaming (4x faster than direct API)
-- Smart routing with automatic provider selection
-- Risk scoring system for provider health
-- Automatic token rotation
-- Comprehensive monitoring dashboard
-- Iran-based server for low latency
 
-## Quick Start
 
-    git clone https://github.com/hooshedigital/aigateway.git
-    cd aigateway
-    npm install
-    cp .env.example .env.local
-    nano .env.local
-    npm run build
 
-## Architecture
 
-    Client -> Supabase Edge Function -> Smart Router -> Providers
-                                            |
-                                  ArvanCloud, OpenRouter,
-                                  Anthropic, OpenAI, etc.
 
-## API Usage
 
-    curl -X POST https://supabase.hooshedigital.ir/functions/v1/ai-gateway/v1/chat/completions \
-      -H "Content-Type: application/json" \
-      -H "Authorization: Bearer YOUR_ANON_KEY" \
-      -d '{"model":"DeepSeek-V4-Flash","messages":[{"role":"user","content":"Hello!"}],"stream":true}'
 
-## Performance
+English
+ | فارسی
+</div>
+Troubleshooting
+Common Issues
+Edge Function Boot Error
+Symptom: worker boot error
+Solution: Ensure index.ts uses Deno.serve().
+JWT Auth Failed
+Symptom: Unauthorized
+Solution: Verify ANON_KEY matches JWT_SECRET.
+CORS Errors
+Solution: Check CORS headers in Edge Function.
+Streaming Not Working
+Solution: Verify stream: true and SSE headers.
+Provider Returns 403/429
+Solution: Check rate limits and API keys.
+Slow Responses
+Solutions:
 
-| Metric | Value |
-|--------|-------|
-| Non-stream response | ~3.2s |
-| Stream TTFT | ~0.5s |
-| Speed vs direct API | 4x faster |
+    Check provider health
+    Verify network
+    Use streaming
 
-## Supported Providers
+Getting Help
 
-| Provider | Models | Status |
-|----------|--------|--------|
-| ArvanCloud | DeepSeek-V4-Flash | Active |
-| OpenRouter | GPT-4, Claude, Gemini | Ready |
-| Anthropic | Claude 3.5 Sonnet | Ready |
-| OpenAI | GPT-4o, GPT-4-turbo | Ready |
-| Google | Gemini 1.5 Pro/Flash | Ready |
-| Groq | Llama 3.3 70B | Ready |
+    Check logs: docker logs supabase-edge-functions
+    Read documentation
+    Search GitHub Issues
+    Create new issue
+    EOF
 
-## License
-
-MIT License - see [LICENSE](LICENSE) file.
-
-## Team
-
-Hoosh Digital - https://hooshedigital.ir
+echo "=== Updating logo ==="
+cat > assets/logo.svg << 'EOF'
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4ECDC4"/>
+      <stop offset="100%" style="stop-color:#FF6B6B"/>
+    </linearGradient>
+  </defs>
+  <circle cx="50" cy="50" r="45" fill="url(#grad)"/>
+  <path d="M 30 40 L 50 25 L 70 40 L 70 60 L 50 75 L 30 60 Z" fill="white" opacity="0.9"/>
+  <circle cx="50" cy="50" r="8" fill="#4ECDC4"/>
+  <circle cx="35" cy="42" r="4" fill="#FF6B6B"/>
+  <circle cx="65" cy="42" r="4" fill="#FF6B6B"/>
+  <circle cx="50" cy="65" r="4" fill="#FF6B6B"/>
+  <line x1="35" y1="42" x2="50" y2="50" stroke="#FF6B6B" stroke-width="2"/>
+  <line x1="65" y1="42" x2="50" y2="50" stroke="#FF6B6B" stroke-width="2"/>
+  <line x1="50" y1="65" x2="50" y2="50" stroke="#FF6B6B" stroke-width="2"/>
+</svg>
