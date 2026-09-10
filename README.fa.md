@@ -53,28 +53,70 @@ cp .env.example .env.local
 nano .env.local
 npm run build
 supabase functions deploy ai-gateway --no-verify-jwt
-	
-❌
-Reporting Vulnerabilities
-DO NOT open public issues for security vulnerabilities.
-📧 Email: info@hooshedigital.ir
-Response time: Within 48 hours for critical issues.
-Security Features
 
-    ✅ JWT authentication
-    ✅ Row Level Security (RLS)
-    ✅ No hardcoded API keys
-    ✅ HTTPS everywhere
-    ✅ CORS properly configured
-    ✅ Environment variables for secrets
+اولین درخواست
+bash
 
-Best Practices
+curl -X POST https://supabase.hooshedigital.ir/functions/v1/ai-gateway/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ANON_KEY" \
+  -d '{
+    "model": "DeepSeek-V4-Flash",
+    "messages": [{"role": "user", "content": "سلام!"}],
+    "stream": true
+  }'
 
-    Never commit .env files
-    Rotate API keys regularly
-    Enable 2FA on all accounts
-    Use strong JWT secrets
-    Monitor access logs
+🏗️ معماری
+text
 
-Responsible Disclosure
-We follow responsible disclosure. Report vulnerabilities privately first.
+┌──────────────┐     ┌─────────────────┐     ┌────────────────┐
+│   کلاینت     │────▶│  Edge Function  │────▶│  Smart Router  │
+│  (هر برنامه) │     │  (Supabase)     │     │                │
+└──────────────┘     └─────────────────┘     └────────────────┘
+                                                   │
+                              ┌─────────┬──────────┼──────────┬─────────┐
+                              ▼         ▼          ▼          ▼         ▼
+                          ArvanCloud  OpenRouter  Anthropic  OpenAI  Gemini
+
+📊 عملکرد
+معیار	مقدار
+پاسخ غیر استریم	~۳.۲ ثانیه
+اولین توکن در استریم	~۰.۵ ثانیه
+بهبود سرعت	۴ برابر
+🌐 ارائه‌دهندگان پشتیبانی شده
+ارائه‌دهنده	مدل‌ها	وضعیت
+🇮🇷 ابراروان	DeepSeek-V4-Flash	✅ فعال
+🌍 OpenRouter	GPT-4، Claude، Gemini	✅ آماده
+🤖 Anthropic	Claude 3.5 Sonnet	✅ آماده
+🧠 OpenAI	GPT-4o، GPT-4-turbo	✅ آماده
+💎 Google Gemini	Gemini 1.5 Pro/Flash	✅ آماده
+⚡ Groq	Llama 3.3 70B	✅ آماده
+📚 مستندات
+سند	توضیح
+🚀 شروع	راهنمای نصب
+🔌 API	مرجع API
+🏗️ معماری	طراحی سیستم
+⚡ عملکرد	بنچمارک
+🛠️ استقرار	Production
+🐛 عیب‌یابی	مشکلات رایج
+🤝 مشارکت
+
+از مشارکت شما استقبال می‌کنیم! راهنمای مشارکت را ببینید.
+📄 لایسنس
+
+MIT - فایل LICENSE.
+👥 تیم
+
+هوش دیجیتال - https://hooshedigital.ir
+📞 تماس
+
+    📧 ایمیل: info@hooshedigital.ir
+
+    💬 مشکلات: GitHub Issues
+
+<div align="center">
+
+ساخته شده با ❤️ در ایران
+
+⭐ اگر این پروژه برایتان مفید بود، ستاره بدهید!
+</div> ```
