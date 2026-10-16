@@ -14,7 +14,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import { useApp } from "@/contexts/AppContext";
 import { LineChart } from "@/components/Charts";
-import type { RiskScore, Provider } from "@/types";
+import type { RiskScore } from "@/types";
 
 export function RiskMonitor() {
   const { t, theme, lang } = useApp();
@@ -23,18 +23,13 @@ export function RiskMonitor() {
   const textSecondary = isDark ? "text-slate-500" : "text-slate-500";
 
   const [scores, setScores] = useState<RiskScore[]>([]);
-  const [providers, setProviders] = useState<Provider[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
-      const [{ data: scoreData }, { data: provData }] = await Promise.all([
-        supabase.from("risk_scores").select("*").order("calculated_at", { ascending: false }),
-        supabase.from("providers").select("*").order("priority", { ascending: true }),
-      ]);
+      const { data: scoreData } = await supabase.from("risk_scores").select("*").order("calculated_at", { ascending: false });
       setScores((scoreData as RiskScore[]) ?? []);
-      setProviders((provData as Provider[]) ?? []);
       setLoading(false);
     }
     fetchData();
