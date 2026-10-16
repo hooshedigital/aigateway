@@ -21,7 +21,7 @@ import type { CostLog, ModelPricing, Budget, Provider } from "@/types";
 const DONUT_COLORS = ["#06b6d4", "#3b82f6", "#8b5cf6", "#10b981", "#f59e0b", "#ef4444", "#ec4899", "#6366f1"];
 
 export function CostAnalysis() {
-  const { t, theme } = useApp();
+  const { t, theme, lang } = useApp();
   const isDark = theme === "dark";
   const cardBg = isDark ? "bg-slate-900/60 border-slate-800" : "bg-white/70 border-slate-200";
   const textSecondary = isDark ? "text-slate-500" : "text-slate-500";
@@ -132,7 +132,6 @@ export function CostAnalysis() {
     // Cost prediction: simple linear projection based on daily average
     const dailyAvg = costTrend.reduce((sum, d) => sum + d.value, 0) / 7;
     const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-    const dayOfMonth = now.getDate();
     const projectedMonthEnd = dailyAvg * daysInMonth;
     const predictedCost = dailyAvg * 30;
 
@@ -326,7 +325,7 @@ export function CostAnalysis() {
               />
             </div>
             <div className="flex items-center justify-between mt-2 text-xs">
-              <span className={textSecondary}>{budgetPct.toFixed(1)}% {t("used")}</span>
+              <span className={textSecondary}>{budgetPct.toFixed(1)}% {(lang === "fa" ? "مصرف‌شده" : "used")}</span>
               <span className={textSecondary}>{t("remaining")}: ${budgetRemaining.toFixed(4)}</span>
             </div>
             <div className="flex items-center gap-2 mt-3">

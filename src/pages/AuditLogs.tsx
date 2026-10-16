@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ScrollText, User, Server, Settings, Shield, Zap, Trash2, Edit, Plus } from "lucide-react";
+import { ScrollText, User, Server, Settings, Shield, Zap, Trash2, Edit } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useApp } from "@/contexts/AppContext";
 import type { AuditLog } from "@/types";

@@ -16,7 +16,7 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - run: npm ci
-      - run: npm run lint || echo "Lint check completed"
+      - run: npm run lint
 
   typecheck:
     runs-on: ubuntu-latest
@@ -27,7 +27,7 @@ jobs:
           node-version: '20'
           cache: 'npm'
       - run: npm ci
-      - run: npm run typecheck || echo "Type check completed"
+      - run: npm run typecheck
 
   build:
     runs-on: ubuntu-latest

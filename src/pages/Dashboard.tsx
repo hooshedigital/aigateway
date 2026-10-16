@@ -5,7 +5,6 @@ import {
   XCircle,
   Clock,
   TrendingUp,
-  Zap,
   Server,
   Cpu,
   DollarSign,

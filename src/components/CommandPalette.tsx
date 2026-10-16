@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Search, ArrowRight, Moon, Sun, Languages } from "lucide-react";
+import { Search, ArrowRight, Sun, Languages } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
 import type { Page } from "@/types";
 import type { TranslationKey } from "@/i18n";
@@ -24,7 +24,7 @@ export function CommandPalette({ open, onClose, onNavigate }: CommandPaletteProp
   const [selectedIdx, setSelectedIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const pages: Page[] = ["dashboard", "providers", "requestLogs", "playground", "sessions", "riskMonitor", "users", "auditLogs", "apiDocs", "settings"];
+  const pages: Page[] = ["dashboard", "providers", "requestLogs", "playground", "sessions", "riskMonitor", "users", "auditLogs", "apiDocs", "settings", "costAnalysis", "guide"];
   const pageLabelMap: Record<Page, TranslationKey> = {
     dashboard: "dashboard",
     providers: "providers",
@@ -36,6 +36,8 @@ export function CommandPalette({ open, onClose, onNavigate }: CommandPaletteProp
     auditLogs: "auditLogs",
     sessions: "sessions",
     riskMonitor: "riskMonitor",
+    costAnalysis: "costAnalysis",
+    guide: "guide",
   };
 
   const commands: CommandItem[] = [
@@ -82,7 +84,7 @@ export function CommandPalette({ open, onClose, onNavigate }: CommandPaletteProp
     }
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [open, filtered, selectedIdx]);
+  }, [open, filtered, selectedIdx, onClose]);
 
   if (!open) return null;
 

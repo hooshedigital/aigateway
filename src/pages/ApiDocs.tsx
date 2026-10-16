@@ -3,7 +3,7 @@ import { Copy, Check, Terminal, Code2, Zap, HelpCircle, AlertTriangle, ChevronDo
 import { useApp } from "@/contexts/AppContext";
 
 export function ApiDocs() {
-  const { t, theme, lang } = useApp();
+  const { t, theme } = useApp();
   const isDark = theme === "dark";
   const cardBg = isDark ? "bg-slate-900/60 border-slate-800" : "bg-white/70 border-slate-200";
   const [copied, setCopied] = useState<string | null>(null);
